@@ -11,7 +11,7 @@ function App() {
             Hello World
           </h1>
           <p className="subtitle">
-            cloud-whiteboard
+            cloud whiteboard
           </p>
           <DrawingArea></DrawingArea>
         </div>
