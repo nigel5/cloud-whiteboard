@@ -7,6 +7,7 @@ import socketClient from "socket.io-client";
 import WelcomeModal from './components/WelcomeModal';
 import RoomInfo from './components/RoomInfo';
 import MouseCursor from './components/MouseCursor';
+import { CanvasContext, CanvasProvider } from './components/canvas/CanvasContext';
 
 export const UserContext = createContext();
 
@@ -40,7 +41,6 @@ function App() {
       } else {
         _socket = socketClient('http://localhost:3000', { query: { nickname }});
       }
-      _socket.on("draw", "draw event");
 
       _socket.on("room joined", (msg) => {
         console.log("Joined ", msg);
@@ -54,6 +54,12 @@ function App() {
     }
   }
 
+  function broadcastDrawEvent(e) {
+    if (socket) {
+      socket.emit("draw", JSON.stringify(e));
+    }
+  }
+
   return (
     <UserContext.Provider value={{
       nickname,
@@ -61,13 +67,16 @@ function App() {
       room,
       setRoom,
       socket,
-      connect
+      connect,
+      broadcastDrawEvent,
     }}>
       <WelcomeModal/>
       <RoomInfo/>
       <MouseCursor/>
       <div onMouseMove={(e) => { setMousepos({ x: e.pageX, y: e.pageY }); }}>
-        <DrawingArea></DrawingArea>
+        <CanvasProvider>
+          <DrawingArea></DrawingArea>
+        </CanvasProvider>
       </div>
       <BrushSelector></BrushSelector>
     </UserContext.Provider>

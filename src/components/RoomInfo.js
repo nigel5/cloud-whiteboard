@@ -6,7 +6,7 @@ function RoomInfo() {
 
     return (
         <div>
-            <p>Currently in room {room}</p>
+            <p>Currently in room <a target="_blank" href={`http://localhost:3000?join=${room}`}>localhost:3000?join={room}</a></p>
         </div>
     )
 }
