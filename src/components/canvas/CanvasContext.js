@@ -20,6 +20,37 @@ export const CanvasProvider = ({ children }) => {
         };
     }
 
+    function parseDataPacket(data) {
+        if (data.event === "begin") {
+            setIsDrawing(true);
+            onMouseDown({
+                remoteEvent: true,
+                nativeEvent: {
+                offsetX: data.x,
+                offsetY: data.y
+                }
+            }, false);
+            } else if (data.event === "move") {
+            onMouseMove({
+                remoteEvent: true,
+                nativeEvent: {
+                offsetX: data.x,
+                offsetY: data.y
+                }
+            }, false);
+    
+            } else if (data.event === "end") {
+                setIsDrawing(false);
+            onMouseUp({
+                nativeEvent: {
+                remoteEvent: true,
+                offsetX: data.x,
+                offsetY: data.y
+                }
+            }, false);
+            }
+    }
+
     useEffect(() => {
         if (canvasRef.current) {
             const canvas = canvasRef.current;
@@ -37,37 +68,19 @@ export const CanvasProvider = ({ children }) => {
             canvasRef.current = canvas;
         }
 
-        if (socket) socket.on("draw", (msg) => {
-            const data = JSON.parse(msg);
-            if (data.event === "begin") {
-            setIsDrawing(true);
-              onMouseDown({
-                remoteEvent: true,
-                nativeEvent: {
-                  offsetX: data.x,
-                  offsetY: data.y
-                }
-              }, false);
-            } else if (data.event === "move") {
-              onMouseMove({
-                remoteEvent: true,
-                nativeEvent: {
-                  offsetX: data.x,
-                  offsetY: data.y
-                }
-              }, false);
-    
-            } else if (data.event === "end") {
-                setIsDrawing(false);
-              onMouseUp({
-                nativeEvent: {
-                  remoteEvent: true,
-                  offsetX: data.x,
-                  offsetY: data.y
-                }
-              }, false);
-            }
-          });
+        if (socket) 
+        {
+            /**
+             * This is emitted if we join an existing room
+             */
+             socket.on("existing draw data", (msg) => {
+                msg.forEach((data) => parseDataPacket(data));
+            });
+
+            socket.on("draw", (msg) => {
+                parseDataPacket(msg);
+            });
+        }
     }, [socket]);
 
     const receiveDrawEvents = (e) => {

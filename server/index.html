@@ -31,7 +31,6 @@
         });
 
         socket.on("draw", function(msg) {
-            console.log("dra");
             var em = document.createElement("p");
             em.textContent = msg;
             messages.appendChild(em);
