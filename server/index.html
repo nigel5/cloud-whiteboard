@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+</head>
+
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <div id="test"></div>
+    <div id="msg"></div>
+
+    <script>
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlSearchParams.entries());
+
+        if (params.join) {
+            var socket = io('http://localhost:3001', { query: "join=" + params.join.trim() });
+        } else {
+            var socket = io('http://localhost:3001');
+        }
+
+        var messages = document.getElementById('msg');
+        var form = document.getElementById('form');
+        var input = document.getElementById('input');
+
+        socket.on('room joined', function (msg) {
+            console.log('room joined', msg);
+            document.getElementById("test").textContent = msg;
+        });
+
+        socket.on("draw", function(msg) {
+            console.log("dra");
+            var em = document.createElement("p");
+            em.textContent = msg;
+            messages.appendChild(em);
+        });
+
+        window.sendMsg = function() {
+            socket.emit("draw", "event");
+        }
+
+        socket.on("connect", () => {
+            console.log(socket.id);
+        });
+
+    </script>
+</body>
+
+</html>
