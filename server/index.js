@@ -5,7 +5,7 @@ const uuidv4 = require('uuid').v4;
 
 const port = process.env.PORT || 3001;
 
-let roomData = {};
+let roomData = {}; // We can have this is memcached
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -15,6 +15,7 @@ io.on('connection', (socket) => {
     let joinedRoomId;
     let nickname = socket.handshake.query.nickname || "Nickname";
     let cursorColor = socket.handshake.query.cursorColor || "#000000";
+    let mousePos = { x: 0, y: 0 };
 
     if (socket.handshake.query.join && io.sockets.adapter.rooms.has(socket.handshake.query.join)) {
         /**
@@ -27,14 +28,17 @@ io.on('connection', (socket) => {
         roomData[joinedRoomId]["users"][socket.id] = {
             nickname,
             cursorColor,
+            mousePos,
         };
 
         // Emit to room members to create the cursor
         socket.to(joinedRoomId).emit("user joined", {
-            nickname,
-            cursorColor
+            [socket.id]: {
+                nickname,
+                cursorColor,
+                mousePos,
+            }
         });
-        console.log("joined existing room");
         socket.emit("existing draw data", roomData[joinedRoomId]["drawEvents"]);
     } else {
         /**
@@ -50,6 +54,7 @@ io.on('connection', (socket) => {
                 [socket.id]: {
                     nickname,
                     cursorColor,
+                    mousePos,
                 },
             },
         };
@@ -57,8 +62,19 @@ io.on('connection', (socket) => {
 
     socket.emit('room joined', joinedRoomId);
 
+    // Emit inital mouse cursor
+    socket.to(joinedRoomId).emit('mouse move', roomData[joinedRoomId]["users"]);
+
     socket.on('disconnect', () => {
-        console.log(nickname, "disconneted");
+        socket.to(joinedRoomId).emit("user left", {
+            [socket.id]: {
+                nickname,
+            }
+        });
+
+        delete roomData[joinedRoomId]["users"][socket.id];
+        // Remit the mouse data to get clients to remove the cursor of this socket that just disconnected
+        socket.to(joinedRoomId).emit('mouse move', roomData[joinedRoomId]["users"]);
     });
 
     socket.on('draw', (msg) => {
@@ -66,8 +82,12 @@ io.on('connection', (socket) => {
         socket.to(joinedRoomId).emit('draw', msg);
     });
 
-    socket.on("mouse pos", (msg) => {
-        socket.to(joinedRoomId).emit('mouse move', msg);
+    socket.on("mouse move", (msg) => {
+        roomData[joinedRoomId]["users"][socket.id]["mousePos"] = {
+            x: msg.x,
+            y: msg.y,
+        };
+        socket.to(joinedRoomId).emit('mouse move', roomData[joinedRoomId]["users"]);
     });
 
     socket.on("request draw events", () => {

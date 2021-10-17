@@ -20,19 +20,24 @@ function App() {
   const [socket, setSocket] = useState();
   const [mousepos, setMousepos] = useState({ x: 0, y: 0 });
 
-  const [mouseCursors, setMouseCursors] = useState([]);
+  const [mouseCursors, setMouseCursors] = useState({});
+  const [leftSocketIds, setLeftSocketIds] = useState([]);
+  const [updatedMousePos, setUpdatedMousePos] = useState({});
 
   let connectedAlready = false;
 
+  /**
+   * Mouse positions and cursors
+   */
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (socket)
-        socket.emit("mouse pos", mousepos);
-    }, 1000);
+        socket.emit("mouse move", mousepos);
+    }, 300);
     return () => {
       window.clearInterval(timer);
     };
-  }, [mousepos]);
+  }, [mousepos, leftSocketIds]);
 
   function connect() {
     if (connectedAlready === false) {
@@ -57,15 +62,25 @@ function App() {
         connectedAlready = true;
         setSocket(_socket);
         setCursorColor(_cursorColor);
-        setMouseCursors((state) => [...state, <MouseCursor key={uuidv4()} fill={_cursorColor} nickname={nickname + " (Me)"} />]);
       });
 
       _socket.on("user joined", (msg) => {
-        setMouseCursors((state) => [...state, <MouseCursor key={uuidv4()} fill={msg.cursorColor} nickname={msg.nickname} />]);
+        const socketId = Object.keys(msg)[0]
       });
 
       _socket.on("user left", (msg) => {
+        const socketId = Object.keys(msg)[0];
+        setLeftSocketIds((state) => [...state, socketId]);
+      });
 
+      /**
+       * Update the position of each client cursor
+       */
+      _socket.on("mouse move", (msg) => {
+        const data = msg;
+        data[_socket.id]["nickname"] = data[_socket.id]["nickname"] + " (Me)";
+        data[_socket.id]["isSelf"] = true;
+        setMouseCursors(data);
       })
     }
   }
@@ -88,7 +103,14 @@ function App() {
     }}>
       <WelcomeModal/>
       <RoomInfo/>
-      {mouseCursors}
+      {
+        Object.keys(mouseCursors).map((key) => {
+          if (mouseCursors[key].isSelf === true) {
+            return (<MouseCursor key={key} fill={mouseCursors[key].cursorColor} nickname={mouseCursors[key].nickname} socketId={key} pos={{ x: 50, y: 50 }} />)
+          }
+          return (<MouseCursor key={key} fill={mouseCursors[key].cursorColor} nickname={mouseCursors[key].nickname} socketId={key} pos={mouseCursors[key].mousePos} />);
+        })
+      }
       <div onMouseMove={(e) => { setMousepos({ x: e.pageX, y: e.pageY }); }}>
         <CanvasProvider>
           <DrawingArea></DrawingArea>
