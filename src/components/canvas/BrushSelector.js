@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { PropTypes } from 'react'
 
 const StyledBrushSelector = styled.div`
 `;

@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import rough from "roughjs/bundled/rough.esm";
 import styled from "styled-components";
 import BrushSelector from "./BrushSelector";
@@ -6,10 +6,9 @@ import BrushSelector from "./BrushSelector";
 const StyledDrawingArea = styled.canvas`
 `;
 
-
 const rghGen = rough.generator();
 
-var getMousePosition = function (e, rect) {
+var getMousePosition = function (e) {
     return {
         x: e.clientX,
         y: e.clientY
@@ -19,19 +18,21 @@ var getMousePosition = function (e, rect) {
 function DrawingArea(props) {
     const { draw, ...rest } = props;
 
+    const [nickname, setNickname] = useState("");
+
+    const [modelClassName, setModelClassName] = useState("modal is-active");
+
     const [brush, setBrush] = useState('pencil');
 
     // Roughjs drawables
     const [drawables, setDrawables] = useState([]);
-    
+
     // Canvas path points - Pencil tool
     const [points, setPoints] = useState([]); // Currently drawing this with pencil
     const [completedFreeformCurve, setCompletedFreeformCurves] = useState([]); // Finished
 
-
     // Are changes being made right now?
     const [isDrawing, setIsDrawing] = useState(false);
-    const [start, setStart] = useState({ x: 0, y: 0 });
 
     // Ref to actual html canvas
     const canvasRef = useRef(null);
@@ -47,18 +48,18 @@ function DrawingArea(props) {
             ctx.lineCap = "round";
             ctx.lineTo(x.x, x.y);
             ctx.stroke();
-        })
+        });
 
         completedFreeformCurve.forEach((x) => {
             ctx.beginPath();
 
             x.forEach((point) => {
-              ctx.lineTo(point.x, point.y);
-              ctx.stroke();
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
             });
 
             ctx.closePath();
-        })
+        });
 
         drawables.forEach((x) => {
             switch (x.brush) {
@@ -73,7 +74,7 @@ function DrawingArea(props) {
         return function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-    }, [drawables, completedFreeformCurve]);
+    }, [drawables, completedFreeformCurve, points]);
 
     // Mouse events
     const onMouseMove = (e) => {
@@ -109,6 +110,8 @@ function DrawingArea(props) {
                     ctx.lineCap = "round";
                     ctx.stroke();
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -142,6 +145,8 @@ function DrawingArea(props) {
                 ctx.moveTo(pos.x, pos.y);
                 ctx.beginPath();
                 break;
+            default:
+                break;
         }
     }
 
@@ -158,25 +163,50 @@ function DrawingArea(props) {
                 const completedFreeformCurve = [...points];
                 setPoints([]); // Current is done
                 setCompletedFreeformCurves((state) => [...state, completedFreeformCurve]);
+                break;
+            default:
+                break;
+        }
+    }
+
+    const onValueChange = (e) => {
+        if (e.target.name === "nickname") {
+            setNickname(e.target.value);
         }
     }
 
     return (
         <>
-        <BrushSelector setBrush={setBrush}/>
-        <StyledDrawingArea
-            ref={canvasRef} {...rest}
-            onMouseMove={onMouseMove}
-            onMouseDown={onMouseDown}
-            onMouseUp={onMouseUp}
-            width={window.innerWidth}
-            height={window.innerHeight}></StyledDrawingArea>
+            <div className={modelClassName}>
+                <div className="modal-background"></div>
+                <div className="modal-content">
+                    <div className="box">
+                        <h1 className="title">Welcome to Cloud Whiteboard</h1>
+                        <h2 className="subtitle">Please enter a nickname</h2>
+                        <div className="field has-addons is-medium">
+                            <div className="control" style={{ width: "100%" }}>
+                                <input className="input" type="text" name="nickname" placeholder="Nickname" value={nickname} onChange={onValueChange}/>
+                            </div>
+                            <div className="control">
+                                <button className="button is-primary" onClick={() => { if (nickname.length > 1) setModelClassName("modal"); }}>
+                                    Ok
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onClick={() => { setModelClassName("modal"); }} className="modal-close is-large" aria-label="close">Close</button>
+            </div>
+            <BrushSelector setBrush={setBrush} />
+            <StyledDrawingArea
+                ref={canvasRef} {...rest}
+                onMouseMove={onMouseMove}
+                onMouseDown={onMouseDown}
+                onMouseUp={onMouseUp}
+                width={window.innerWidth}
+                height={window.innerHeight}></StyledDrawingArea>
         </>
     );
-}
-
-DrawingArea.defaultProps = {
-
 }
 
 export default DrawingArea;
