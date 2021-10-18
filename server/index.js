@@ -1,15 +1,14 @@
-const app = require('express')();
+const express = require("express");
+const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const uuidv4 = require('uuid').v4;
-
-const port = process.env.PORT || 3001;
+const path = require("path");
+const port = process.env.PORT || 3000;
 
 let roomData = {}; // We can have this is memcached
 
-app.get('/', (req, res) => {
-    res.send("There's nothing here");
-});
+app.use(express.static(path.join(__dirname, '../build')));
 
 io.on('connection', (socket) => {
     let joinedRoomId;
