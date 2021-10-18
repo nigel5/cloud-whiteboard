@@ -159,10 +159,12 @@ export const CanvasProvider = ({ children }) => {
      * @param {*} remoteBrushSettings Override this component state brush settings
      */
     const onMouseUp = (e, broadcast, remoteBrushSettings) => {
-        if (e.target) 
+        if (e.target && !remoteBrushSettings) 
             e.preventDefault();
-            
-        setIsDrawing(false);
+        
+        if (!remoteBrushSettings)
+            setIsDrawing(false);
+        
         const { x, y } = getPos(e);
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
@@ -185,6 +187,7 @@ export const CanvasProvider = ({ children }) => {
             case "rectangle":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
                 finishDrawingRectangle({ x, y }, mouseStart);
+                break;
             default:
                 break;
         }
@@ -250,10 +253,13 @@ export const CanvasProvider = ({ children }) => {
     }
 
     const onMouseDown = (e, broadcast, remoteBrushSettings) => {
-        if (e.target) 
+        if (e.target && !remoteBrushSettings) 
             e.preventDefault();
-            
-        setIsDrawing(true);
+        
+        
+        if (!remoteBrushSettings)
+            setIsDrawing(true);
+        
         const { x, y } = getPos(e);
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
@@ -280,9 +286,11 @@ export const CanvasProvider = ({ children }) => {
             case "circle":
                 previewCtx.strokeStyle = brushSettings.brushColor;
                 setMouseStart({ x, y });
+                break;
             case "rectangle":
                 previewCtx.strokeStyle = brushSettings.brushColor;
                 setMouseStart({ x, y });
+                break;
             default:
                 break;
         }
@@ -299,10 +307,10 @@ export const CanvasProvider = ({ children }) => {
     }
 
     const onMouseMove = (e, broadcast, remoteBrushSettings) => {
-        if (e.target) 
+        if (e.target && !remoteBrushSettings) 
             e.preventDefault();
             
-        if (isDrawing || e.remoteEvent) {
+        if (isDrawing || remoteBrushSettings) {
             const { x, y } = getPos(e);
 
             const canvas = canvasRef.current;
