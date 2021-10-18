@@ -14,7 +14,7 @@ export const CanvasProvider = ({ children }) => {
     });
     const [scale, setScale] = useState(2);
 
-    const [lineStart, setLineStart] = useState({ x: 0, y: 0 });
+    const [mouseStart, setMouseStart] = useState({ x: 0, y: 0 });
 
     function getPos(e) {
         const _e = e.nativeEvent;
@@ -35,7 +35,23 @@ export const CanvasProvider = ({ children }) => {
         ctx.lineTo(endXY.x, endXY.y);
         ctx.stroke();
         ctx.closePath();
-        setLineStart({ x: 0, y:0 });
+        setMouseStart({ x: 0, y:0 });
+    }
+
+    function distance(p1, p2) {
+        return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+
+    function finishDrawingCircle(centerXY, endXY) {
+        const r = distance(centerXY, endXY);
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        ctx.beginPath();
+        ctx.arc(centerXY.x, centerXY.y, r, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.closePath();
     }
 
     function parseDataPacket(data) {
@@ -71,6 +87,8 @@ export const CanvasProvider = ({ children }) => {
                     }, false, data.brushSettings);
                 } else if (data.brush === "line") {
                     finishDrawingLine(data.start, data.end);
+                } else if (data.brush === "circle") {
+                    finishDrawingCircle(data.start, data.end);
                 }
                 break;
             case "clear":
@@ -141,7 +159,11 @@ export const CanvasProvider = ({ children }) => {
                 break;
             case "line":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                finishDrawingLine(lineStart, { x, y });
+                finishDrawingLine(mouseStart, { x, y });
+                break;
+            case "circle":
+                previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+                finishDrawingCircle(mouseStart, { x, y });
                 break;
             default:
                 break;
@@ -162,8 +184,23 @@ export const CanvasProvider = ({ children }) => {
                         event: "end",
                         brushSettings,
                         start: {
-                            x: lineStart.x,
-                            y: lineStart.y,
+                            x: mouseStart.x,
+                            y: mouseStart.y,
+                        },
+                        end: {
+                            x,
+                            y,
+                        },
+                    });
+                    break;
+                case "circle":
+                    broadcastDrawEvent({
+                        brush: "circle",
+                        event: "end",
+                        brushSettings,
+                        start: {
+                            x: mouseStart.x,
+                            y: mouseStart.y,
                         },
                         end: {
                             x,
@@ -203,8 +240,11 @@ export const CanvasProvider = ({ children }) => {
             case "line":
                 // For drawing a line, we want to preview the line on the preview canvas first before committing to the main canvas
                 previewCtx.strokeStyle = brushSettings.brushColor;
-                setLineStart({ x, y });
+                setMouseStart({ x, y });
                 break;
+            case "circle":
+                previewCtx.strokeStyle = brushSettings.brushColor;
+                setMouseStart({ x, y });
             default:
                 break;
         }
@@ -247,10 +287,18 @@ export const CanvasProvider = ({ children }) => {
                 case "line":
                     previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
                     previewCtx.beginPath();
-                    previewCtx.moveTo(lineStart.x, lineStart.y);
+                    previewCtx.moveTo(mouseStart.x, mouseStart.y);
                     previewCtx.lineTo(x, y);
                     previewCtx.stroke();
                     break;
+                case "circle":
+                {
+                    const r = distance(mouseStart, { x, y });
+                    previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+                    previewCtx.beginPath();
+                    previewCtx.arc(mouseStart.x, mouseStart.y, r, 0, 2*Math.PI);
+                    previewCtx.stroke();
+                }
                 default:
                     break;
             }
@@ -267,6 +315,7 @@ export const CanvasProvider = ({ children }) => {
                         });
                         break;
                     case "line":
+                    case "circle":
                         break;
                     default:
                         break;

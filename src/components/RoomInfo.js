@@ -7,7 +7,7 @@ function RoomInfo() {
 
     return (
         <div>
-            <p>Currently in room <a target="_blank" rel="noreferrer noopener" href={`${serverUrl}?join=${room}`}>${serverUrl}?join={room}</a></p>
+            <p>Currently in room <a target="_blank" rel="noreferrer noopener" href={`${serverUrl}?join=${room}`}>{serverUrl}?join={room}</a></p>
         </div>
     )
 }

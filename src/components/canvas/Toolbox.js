@@ -19,6 +19,7 @@ function Toolbox({ setBrushSettings, brushSettings, clear }) {
             <div className="buttons">
                 <button name="pencil" className={brushSettings.brush === "pencil" ? "button is-primary" : "button"} onClick={() => setBrushSettings((state) => ({...state, brush: "pencil"}))}>Pencil</button>
                 <button name="line" className={brushSettings.brush === "line" ? "button is-primary" : "button"} onClick={() => setBrushSettings((state) => ({...state, brush: "line"}))}>Line</button>
+                <button name="circle" className={brushSettings.brush === "circle" ? "button is-primary" : "button"} onClick={() => setBrushSettings((state) => ({...state, brush: "circle"}))}>Circle</button>
                 <input type="color" name="Color" value={brushSettings.brushColor} onChange={(e) => { setBrushSettings((state) => ({...state, brushColor: e.target.value })) }}/>
                 <button className="button" onClick={clear}>Clear</button>
                 <button className="button" onClick={saveCanvas}>Save</button>
