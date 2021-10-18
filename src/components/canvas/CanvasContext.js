@@ -52,6 +52,21 @@ export const CanvasProvider = ({ children }) => {
         ctx.arc(centerXY.x, centerXY.y, r, 0, 2*Math.PI);
         ctx.stroke();
         ctx.closePath();
+        setMouseStart({ x: 0, y:0 });
+    }
+
+    function finishDrawingRectangle(topLeftXY, bottomRightXY) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        const w = topLeftXY.x - bottomRightXY.x; // The canvas API knows how to handle negative values
+        const h = topLeftXY.y - bottomRightXY.y;
+
+        ctx.beginPath();
+        ctx.rect(bottomRightXY.x, bottomRightXY.y, w, h);
+        ctx.stroke();
+        ctx.closePath();
+        setMouseStart({ x: 0, y:0 });
     }
 
     function parseDataPacket(data) {
@@ -89,6 +104,8 @@ export const CanvasProvider = ({ children }) => {
                     finishDrawingLine(data.start, data.end);
                 } else if (data.brush === "circle") {
                     finishDrawingCircle(data.start, data.end);
+                } else if (data.brush === "rectangle") {
+                    finishDrawingRectangle(data.start, data.end);
                 }
                 break;
             case "clear":
@@ -165,6 +182,9 @@ export const CanvasProvider = ({ children }) => {
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
                 finishDrawingCircle(mouseStart, { x, y });
                 break;
+            case "rectangle":
+                previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+                finishDrawingRectangle({ x, y }, mouseStart);
             default:
                 break;
         }
@@ -196,6 +216,21 @@ export const CanvasProvider = ({ children }) => {
                 case "circle":
                     broadcastDrawEvent({
                         brush: "circle",
+                        event: "end",
+                        brushSettings,
+                        start: {
+                            x: mouseStart.x,
+                            y: mouseStart.y,
+                        },
+                        end: {
+                            x,
+                            y,
+                        },
+                    });
+                    break;
+                case "rectangle":
+                    broadcastDrawEvent({
+                        brush: "rectangle",
                         event: "end",
                         brushSettings,
                         start: {
@@ -243,6 +278,9 @@ export const CanvasProvider = ({ children }) => {
                 setMouseStart({ x, y });
                 break;
             case "circle":
+                previewCtx.strokeStyle = brushSettings.brushColor;
+                setMouseStart({ x, y });
+            case "rectangle":
                 previewCtx.strokeStyle = brushSettings.brushColor;
                 setMouseStart({ x, y });
             default:
@@ -298,6 +336,20 @@ export const CanvasProvider = ({ children }) => {
                     previewCtx.beginPath();
                     previewCtx.arc(mouseStart.x, mouseStart.y, r, 0, 2*Math.PI);
                     previewCtx.stroke();
+                    previewCtx.closePath();
+                    break;
+                }
+                case "rectangle":
+                {
+                    const w = x - mouseStart.x;
+                    const h = y - mouseStart.y;
+                    previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+            
+                    previewCtx.beginPath();
+                    previewCtx.rect(mouseStart.x, mouseStart.y, w, h);
+                    previewCtx.stroke();
+                    previewCtx.closePath();
+                    break;
                 }
                 default:
                     break;
