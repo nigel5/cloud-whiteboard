@@ -1,22 +1,22 @@
 import { useContext } from "react";
 import styled from "styled-components";
-import BrushSelector from "./BrushSelector";
 import { CanvasContext } from "./CanvasContext";
+import Toolbox from "./Toolbox";
 
 const StyledDrawingArea = styled.canvas`
 `;
 
 function DrawingArea(props) {
-    const canvasContext = useContext(CanvasContext);
+    const { canvasRef, onMouseMove, onMouseDown, onMouseUp, clear, brushSettings, setBrushSettings } = useContext(CanvasContext);
 
     return (
     <>
-        <BrushSelector setBrush={canvasContext.setBrush}/>
+        <Toolbox clear={clear} brushSettings={brushSettings} setBrushSettings={setBrushSettings} />
         <StyledDrawingArea
-            ref={canvasContext.canvasRef}
-            onMouseMove={(e) => canvasContext.onMouseMove(e, true)}
-            onMouseDown={(e) => canvasContext.onMouseDown(e, true)}
-            onMouseUp={(e) => canvasContext.onMouseUp(e, true)}></StyledDrawingArea>
+            ref={canvasRef}
+            onMouseMove={(e) => onMouseMove(e, true)}
+            onMouseDown={(e) => onMouseDown(e, true)}
+            onMouseUp={(e) => onMouseUp(e, true)}></StyledDrawingArea>
     </>
     );
 }

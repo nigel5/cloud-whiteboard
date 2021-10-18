@@ -1,6 +1,6 @@
 import './App.css';
 import DrawingArea from './components/canvas/DrawingArea';
-import BrushSelector from './components/canvas/BrushSelector';
+import BrushSelector from './components/canvas/Toolbox';
 import { useEffect, createContext, useState } from 'react';
 import 'bulma/css/bulma.min.css';
 import socketClient from "socket.io-client";
@@ -9,20 +9,18 @@ import RoomInfo from './components/RoomInfo';
 import MouseCursor from './components/MouseCursor';
 import { CanvasProvider } from './components/canvas/CanvasContext';
 import { randomHexColor } from './util/random';
-import { v4 as uuidv4 }  from "uuid";
 
 export const UserContext = createContext();
 
 function App() {
   const [nickname, setNickname] = useState("");
-  const [cursorColor, setCursorColor] = useState("#000000");
+  // const [cursorColor, setCursorColor] = useState("#000000");
   const [room, setRoom] = useState("");
   const [socket, setSocket] = useState();
   const [mousepos, setMousepos] = useState({ x: 0, y: 0 });
 
   const [mouseCursors, setMouseCursors] = useState({});
   const [leftSocketIds, setLeftSocketIds] = useState([]);
-  const [updatedMousePos, setUpdatedMousePos] = useState({});
 
   let connectedAlready = false;
 
@@ -33,7 +31,7 @@ function App() {
     const timer = window.setInterval(() => {
       if (socket)
         socket.emit("mouse move", mousepos);
-    }, 300);
+    }, 100);
     return () => {
       window.clearInterval(timer);
     };
@@ -61,12 +59,12 @@ function App() {
       _socket.on("connect", (msg) => {
         connectedAlready = true;
         setSocket(_socket);
-        setCursorColor(_cursorColor);
+        // setCursorColor(_cursorColor);
       });
 
-      _socket.on("user joined", (msg) => {
-        const socketId = Object.keys(msg)[0]
-      });
+      // _socket.on("user joined", (msg) => {
+      //   const socketId = Object.keys(msg)[0]
+      // });
 
       _socket.on("user left", (msg) => {
         const socketId = Object.keys(msg)[0];
@@ -116,7 +114,7 @@ function App() {
           <DrawingArea></DrawingArea>
         </CanvasProvider>
       </div>
-      <BrushSelector></BrushSelector>
+      {/* <BrushSelector></BrushSelector> */}
     </UserContext.Provider>
   );
 }

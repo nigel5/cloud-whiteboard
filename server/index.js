@@ -8,7 +8,7 @@ const port = process.env.PORT || 3001;
 let roomData = {}; // We can have this is memcached
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.send("There's nothing here");
 });
 
 io.on('connection', (socket) => {
@@ -39,7 +39,6 @@ io.on('connection', (socket) => {
                 mousePos,
             }
         });
-        socket.emit("existing draw data", roomData[joinedRoomId]["drawEvents"]);
     } else {
         /**
          * New room
@@ -91,6 +90,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on("request draw events", () => {
+        socket.emit("existing draw data", roomData[joinedRoomId]["drawEvents"]);
     });
 });
 

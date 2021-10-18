@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import styled, { keyframes, css } from "styled-components";
+import styled, { keyframes } from "styled-components";
 
 let animation = (prev, next) => keyframes`
     from: {
