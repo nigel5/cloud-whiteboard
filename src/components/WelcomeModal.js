@@ -11,6 +11,17 @@ function WelcomeModal() {
             userContext.setNickname(e.target.value);
         }
     }
+    
+    const closeModal = (e) => {
+        e.preventDefault();
+
+        if (userContext.nickname.length > 0) {
+            setModelClassName("modal");
+            userContext.connect();
+        } else {
+            alert("Please enter a nickname");
+        }
+    }
 
     return (
         <div className={modelClassName}>
@@ -19,16 +30,16 @@ function WelcomeModal() {
                 <div className="box">
                     <h1 className="title">Welcome to Cloud Whiteboard</h1>
                     <h2 className="subtitle">Please enter a nickname</h2>
-                    <div className="field has-addons is-medium">
+                    <form className="field has-addons is-medium" onSubmit={closeModal}>
                         <div className="control" style={{ width: "100%" }}>
-                            <input className="input" type="text" name="nickname" placeholder="Nickname" value={userContext.nickname} onChange={onValueChange} />
+                            <input autoFocus className="input" type="text" name="nickname" placeholder="Nickname" value={userContext.nickname} onChange={onValueChange} />
                         </div>
                         <div className="control">
-                            <button className="button is-primary" onClick={() => { if (userContext.nickname.length > 0) setModelClassName("modal"); userContext.connect(); }}>
+                            <button className="button is-primary" type="submit">
                                 Ok
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
             <button onClick={() => { setModelClassName("modal"); }} className="is-large" aria-label="close">Close</button>
