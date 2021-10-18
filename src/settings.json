@@ -1,3 +1,4 @@
 {
+    "serverUrl": "http://localhost:3000",
     "socketServer": "http://localhost:3000"
 }
