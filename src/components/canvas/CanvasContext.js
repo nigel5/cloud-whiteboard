@@ -102,6 +102,9 @@ export const CanvasProvider = ({ children }) => {
      * @param {*} remoteBrushSettings Override this component state brush settings
      */
     const onMouseUp = (e, broadcast, remoteBrushSettings) => {
+        if (e.target) 
+            e.preventDefault();
+            
         setIsDrawing(false);
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
@@ -116,6 +119,9 @@ export const CanvasProvider = ({ children }) => {
     }
 
     const onMouseDown = (e, broadcast, remoteBrushSettings) => {
+        if (e.target) 
+            e.preventDefault();
+            
         setIsDrawing(true);
         const { x, y } = getPos(e);
         const canvas = canvasRef.current;
@@ -139,6 +145,9 @@ export const CanvasProvider = ({ children }) => {
     }
 
     const onMouseMove = (e, broadcast, remoteBrushSettings) => {
+        if (e.target) 
+            e.preventDefault();
+            
         if (isDrawing || e.remoteEvent) {
             const { x, y } = getPos(e);
 

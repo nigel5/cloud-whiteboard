@@ -9,6 +9,8 @@ import RoomInfo from './components/RoomInfo';
 import MouseCursor from './components/MouseCursor';
 import { CanvasProvider } from './components/canvas/CanvasContext';
 import { randomHexColor } from './util/random';
+import { socketServer } from "./settings.json";
+
 
 export const UserContext = createContext();
 
@@ -46,9 +48,9 @@ function App() {
   
       let _socket; // May not be connected
       if (params.join) {
-        _socket = socketClient('http://localhost:3000', { query: { join : params.join.trim(), nickname, cursorColor: _cursorColor }});
+        _socket = socketClient(socketServer, { query: { join : params.join.trim(), nickname, cursorColor: _cursorColor }});
       } else {
-        _socket = socketClient('http://localhost:3000', { query: { nickname, cursorColor: _cursorColor }});
+        _socket = socketClient(socketServer, { query: { nickname, cursorColor: _cursorColor }});
       }
 
       _socket.on("room joined", (msg) => {
