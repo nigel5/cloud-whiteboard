@@ -7,7 +7,7 @@ export const CanvasProvider = ({ children }) => {
     const { broadcastDrawEvent, socket } = useContext(UserContext);
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [brushSettings, setbrushSettings] = useState({
+    const [brushSettings, setBrushSettings] = useState({
         brush: "pencil",
         brushColor: "black",
     });
@@ -186,7 +186,7 @@ export const CanvasProvider = ({ children }) => {
                 onMouseMove,
                 canvasRef,
                 brushSettings,
-                setbrushSettings,
+                setBrushSettings,
                 clear,
             }}
         >
