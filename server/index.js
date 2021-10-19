@@ -18,6 +18,7 @@ io.on('connection', (socket) => {
     let nickname = socket.handshake.query.nickname || "Nickname";
     let cursorColor = socket.handshake.query.cursorColor || "#000000";
     let mousePos = { x: 0, y: 0 };
+    let canvasRefIndex = 0;
 
     if (socket.handshake.query.join && io.sockets.adapter.rooms.has(socket.handshake.query.join)) {
         /**
@@ -33,12 +34,15 @@ io.on('connection', (socket) => {
             mousePos,
         };
 
+        canvasRefIndex = Object.keys(roomData[joinedRoomId]).length - 1; 
+
         // Emit to room members to create the cursor
         socket.to(joinedRoomId).emit("user joined", {
             [socket.id]: {
                 nickname,
                 cursorColor,
                 mousePos,
+                canvasRefIndex,
             }
         });
     } else {
@@ -46,6 +50,7 @@ io.on('connection', (socket) => {
          * New room
          */
         const newRoomId = uuidv4().split('-')[0];
+        canvasRefIndex = 0;
         socket.join(newRoomId);
         joinedRoomId = newRoomId;
         console.log("Socket " + socket.id + " joined new room ", newRoomId);

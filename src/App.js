@@ -9,8 +9,7 @@ import RoomInfo from './components/RoomInfo';
 import MouseCursor from './components/MouseCursor';
 import { CanvasProvider } from './components/canvas/CanvasContext';
 import { randomHexColor } from './util/random';
-import { socketServer } from "./settings.json";
-
+import { socketServer, mouseCursorEmitInterval } from "./settings.json";
 
 export const UserContext = createContext();
 
@@ -33,7 +32,7 @@ function App() {
     const timer = window.setInterval(() => {
       if (socket)
         socket.emit("mouse move", mousepos);
-    }, 100);
+    }, mouseCursorEmitInterval);
     return () => {
       window.clearInterval(timer);
     };

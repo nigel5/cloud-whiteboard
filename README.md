@@ -1,10 +1,47 @@
-# Getting Started with Create React App
+# Cloud Whiteboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Free collaborative whiteboard with unlimited number of users.
 
-## Available Scripts
+![Drawing example](./images/collabboard-example-1.gif)
 
-In the project directory, you can run:
+### Features
+- Pencil, line, circle, and rectangle, tools
+- Save the drawing canvas to a JPG
+- Cursor position tracking to point to things on the canvas
+- Share link for others to join your room
+
+### How it works
+The socket.io server mirrors the emitted events to the clients in the emitter socket's room. The express server stores an object of each room's datas, that way, when a socket joins in non-empty room they can have that data downloaded.
+
+Mouse cursor position is also emitted by the value `mouseCursorEmitInterval` specified in settings.json.
+
+Socket server connection string, and Express server url bases are also configured in settings.json.
+
+NOTE: This project has a Google Analytics tag embedded in the head of `public/index.html`. Please change or update this value depending on your preferences.
+
+![Multiple clients drawing example](./images/collabboard-example-2.gif)
+
+#### Draw Event Loop
+![Draw Event Loop](./images/collabboard-draw-flow.png)
+
+#### Connection
+![Connection](./images/collabboard-connection-flow.png)
+
+## Future Improvements
+- Add more tools, such as an eraser, or flood fill
+- Undo button, this can be done by keeping track of the canvas events on a stack data structure
+- As more the requirements increase for more users, we may have to move the room data memory storage to something more efficient such as memcached, or Redis
+- Allow users to save their canvas and come back later. Right now when all users leave the room, it's draw events are deleted from memory
+- Better user interface and enable drawing on touch/gesture devices
+
+
+## Setup
+
+In the project directory run
+```
+npm install
+```
+
 
 ### `npm start`
 
@@ -41,30 +78,8 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 
 ## Learn More
 
+This app was built using React.
+
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

@@ -69,26 +69,20 @@ export const CanvasProvider = ({ children }) => {
         setMouseStart({ x: 0, y:0 });
     }
 
+    function onSocketDrawEventMove(start, end, color, emit) {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.closePath();
+    }
+
     function parseDataPacket(data) {
         switch(data.event) {
-            case "begin":
-                setIsDrawing(true);
-                onMouseDown({
-                    remoteEvent: true,
-                    nativeEvent: {
-                        offsetX: data.x,
-                        offsetY: data.y
-                    }
-                }, false, data.brushSettings);
-                break;
             case "move":
-                onMouseMove({
-                    remoteEvent: true,
-                    nativeEvent: {
-                        offsetX: data.x,
-                        offsetY: data.y
-                    }
-                }, false, data.brushSettings);
+                onSocketDrawEventMove(data.start, data.end);
                 break;
             case "end":
                 setIsDrawing(false);
@@ -158,12 +152,13 @@ export const CanvasProvider = ({ children }) => {
      * @param {*} broadcast Whether to emit this event to other sockets
      * @param {*} remoteBrushSettings Override this component state brush settings
      */
-    const onMouseUp = (e, broadcast, remoteBrushSettings) => {
-        if (e.target && !remoteBrushSettings) 
+    const onMouseUp = (e, broadcast) => {
+        if (e.target) 
             e.preventDefault();
+    
+        if (!isDrawing) return;
         
-        if (!remoteBrushSettings)
-            setIsDrawing(false);
+        setIsDrawing(false);
         
         const { x, y } = getPos(e);
         const canvas = canvasRef.current;
@@ -199,6 +194,14 @@ export const CanvasProvider = ({ children }) => {
                         brush: "pencil",
                         event: "end",
                         brushSettings,
+                        start: {
+                            x: mouseStart.x,
+                            y: mouseStart.y,
+                        },
+                        end: {
+                            x,
+                            y,
+                        },
                     });
                     break;
                 case "line":
@@ -252,13 +255,11 @@ export const CanvasProvider = ({ children }) => {
         }
     }
 
-    const onMouseDown = (e, broadcast, remoteBrushSettings) => {
-        if (e.target && !remoteBrushSettings) 
+    const onMouseDown = (e, broadcast) => {
+        if (e.target) 
             e.preventDefault();
         
-        
-        if (!remoteBrushSettings)
-            setIsDrawing(true);
+        setIsDrawing(true);
         
         const { x, y } = getPos(e);
         const canvas = canvasRef.current;
@@ -267,119 +268,106 @@ export const CanvasProvider = ({ children }) => {
         const previewCanvas = previewCanvasRef.current;
         const previewCtx = previewCanvas.getContext("2d");
 
-        if (remoteBrushSettings) {
-            ctx.strokeStyle = remoteBrushSettings.brushColor;
-        } else {
-            ctx.strokeStyle = brushSettings.brushColor;
-        }
+        setMouseStart({ x, y });
 
         switch (brushSettings.brush) {
             case "pencil":
-                ctx.beginPath();
-                ctx.moveTo(x, y);
+                ctx.strokeStyle = brushSettings.brushColor;
                 break;
             case "line":
                 // For drawing a line, we want to preview the line on the preview canvas first before committing to the main canvas
                 previewCtx.strokeStyle = brushSettings.brushColor;
-                setMouseStart({ x, y });
                 break;
             case "circle":
                 previewCtx.strokeStyle = brushSettings.brushColor;
-                setMouseStart({ x, y });
                 break;
             case "rectangle":
                 previewCtx.strokeStyle = brushSettings.brushColor;
-                setMouseStart({ x, y });
                 break;
+            default:
+                break;
+        }
+    }
+
+    const onMouseMove = (e, broadcast) => {
+        if (e.target) 
+            e.preventDefault();
+            
+        if (!isDrawing) return;
+
+        const { x, y } = getPos(e);
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        const previewCanvas = previewCanvasRef.current;
+        const previewCtx = previewCanvas.getContext("2d");
+
+        switch (brushSettings.brush) {
+            case "pencil":
+                setMouseStart({ x, y }); // Only for pencil. For the other shapes we need to remember the starting point
+                ctx.beginPath();
+                ctx.moveTo(mouseStart.x, mouseStart.y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.closePath();
+                break;
+            case "line":
+                previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+                previewCtx.beginPath();
+                previewCtx.moveTo(mouseStart.x, mouseStart.y);
+                previewCtx.lineTo(x, y);
+                previewCtx.stroke();
+                break;
+            case "circle":
+            {
+                const r = distance(mouseStart, { x, y });
+                previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+                previewCtx.beginPath();
+                previewCtx.arc(mouseStart.x, mouseStart.y, r, 0, 2*Math.PI);
+                previewCtx.stroke();
+                previewCtx.closePath();
+                break;
+            }
+            case "rectangle":
+            {
+                const w = x - mouseStart.x;
+                const h = y - mouseStart.y;
+                previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
+        
+                previewCtx.beginPath();
+                previewCtx.moveTo(x, y);
+                previewCtx.rect(mouseStart.x, mouseStart.y, w, h);
+                previewCtx.stroke();
+                previewCtx.closePath();
+                break;
+            }
             default:
                 break;
         }
 
         if (broadcast) {
-            broadcastDrawEvent({
-                brush: "pencil",
-                event: "begin",
-                x,
-                y,
-                brushSettings,
-            });
-        }
-    }
-
-    const onMouseMove = (e, broadcast, remoteBrushSettings) => {
-        if (e.target && !remoteBrushSettings) 
-            e.preventDefault();
-            
-        if (isDrawing || remoteBrushSettings) {
-            const { x, y } = getPos(e);
-
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext("2d");
-
-            const previewCanvas = previewCanvasRef.current;
-            const previewCtx = previewCanvas.getContext("2d");
-
-            if (remoteBrushSettings) {
-                ctx.strokeStyle = remoteBrushSettings.brushColor;
-            } else {
-                ctx.strokeStyle = brushSettings.brushColor;
-            }
-
             switch (brushSettings.brush) {
                 case "pencil":
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                    break;
-                case "line":
-                    previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                    previewCtx.beginPath();
-                    previewCtx.moveTo(mouseStart.x, mouseStart.y);
-                    previewCtx.lineTo(x, y);
-                    previewCtx.stroke();
-                    break;
-                case "circle":
-                {
-                    const r = distance(mouseStart, { x, y });
-                    previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                    previewCtx.beginPath();
-                    previewCtx.arc(mouseStart.x, mouseStart.y, r, 0, 2*Math.PI);
-                    previewCtx.stroke();
-                    previewCtx.closePath();
-                    break;
-                }
-                case "rectangle":
-                {
-                    const w = x - mouseStart.x;
-                    const h = y - mouseStart.y;
-                    previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-            
-                    previewCtx.beginPath();
-                    previewCtx.rect(mouseStart.x, mouseStart.y, w, h);
-                    previewCtx.stroke();
-                    previewCtx.closePath();
-                    break;
-                }
-                default:
-                    break;
-            }
-
-            if (broadcast) {
-                switch (brushSettings.brush) {
-                    case "pencil":
-                        broadcastDrawEvent({
-                            brush: "pencil",
-                            event: "move",
+                    broadcastDrawEvent({
+                        brush: "pencil",
+                        event: "move",
+                        brushSettings,
+                        start: {
+                            x: mouseStart.x,
+                            y: mouseStart.y,
+                        },
+                        end: {
                             x,
                             y,
-                            brushSettings,
-                        });
-                        break;
-                    case "line":
-                    case "circle":
-                        break;
-                    default:
-                        break;
-                }
+                        },
+                    });
+                    break;
+                case "line":
+                case "circle":
+                    break;
+                default:
+                    break;
             }
         }
     }
