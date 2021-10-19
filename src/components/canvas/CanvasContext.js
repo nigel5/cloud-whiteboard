@@ -10,7 +10,7 @@ export const CanvasProvider = ({ children }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [brushSettings, setBrushSettings] = useState({
         brush: "pencil",
-        brushColor: "black",
+        brushColor: "#000000",
     });
     const [scale, setScale] = useState(2);
 
@@ -26,13 +26,14 @@ export const CanvasProvider = ({ children }) => {
         };
     }
 
-    function finishDrawingLine(startXY, endXY) {
+    function finishDrawingLine(startXY, endXY, color) {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
 
         ctx.beginPath();
         ctx.moveTo(startXY.x, startXY.y);
         ctx.lineTo(endXY.x, endXY.y);
+        ctx.strokeStyle = color;
         ctx.stroke();
         ctx.closePath();
         setMouseStart({ x: 0, y:0 });
@@ -42,20 +43,21 @@ export const CanvasProvider = ({ children }) => {
         return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
     }
 
-    function finishDrawingCircle(centerXY, endXY) {
+    function finishDrawingCircle(centerXY, endXY, color) {
         const r = distance(centerXY, endXY);
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
 
         ctx.beginPath();
+        ctx.strokeStyle = color;
         ctx.arc(centerXY.x, centerXY.y, r, 0, 2*Math.PI);
         ctx.stroke();
         ctx.closePath();
         setMouseStart({ x: 0, y:0 });
     }
 
-    function finishDrawingRectangle(topLeftXY, bottomRightXY) {
+    function finishDrawingRectangle(topLeftXY, bottomRightXY, color) {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
 
@@ -64,6 +66,7 @@ export const CanvasProvider = ({ children }) => {
 
         ctx.beginPath();
         ctx.rect(bottomRightXY.x, bottomRightXY.y, w, h);
+        ctx.strokeStyle = color;
         ctx.stroke();
         ctx.closePath();
         setMouseStart({ x: 0, y:0 });
@@ -71,6 +74,7 @@ export const CanvasProvider = ({ children }) => {
 
     function onSocketDrawEventMove(start, end, color, emit) {
         const ctx = canvasRef.current.getContext("2d");
+        ctx.beginPath();
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
         ctx.strokeStyle = color;
@@ -82,24 +86,15 @@ export const CanvasProvider = ({ children }) => {
     function parseDataPacket(data) {
         switch(data.event) {
             case "move":
-                onSocketDrawEventMove(data.start, data.end);
+                onSocketDrawEventMove(data.start, data.end, data.brushSettings.brushColor);
                 break;
             case "end":
-                setIsDrawing(false);
-                if (data.brush === "pencil") {
-                    onMouseUp({
-                        nativeEvent: {
-                            remoteEvent: true,
-                            offsetX: data.x,
-                            offsetY: data.y
-                        }
-                    }, false, data.brushSettings);
-                } else if (data.brush === "line") {
-                    finishDrawingLine(data.start, data.end);
+                if (data.brush === "line") {
+                    finishDrawingLine(data.start, data.end, data.brushSettings.brushColor);
                 } else if (data.brush === "circle") {
-                    finishDrawingCircle(data.start, data.end);
+                    finishDrawingCircle(data.start, data.end, data.brushSettings.brushColor);
                 } else if (data.brush === "rectangle") {
-                    finishDrawingRectangle(data.start, data.end);
+                    finishDrawingRectangle(data.start, data.end, data.brushSettings.brushColor);
                 }
                 break;
             case "clear":
@@ -173,15 +168,15 @@ export const CanvasProvider = ({ children }) => {
                 break;
             case "line":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                finishDrawingLine(mouseStart, { x, y });
+                finishDrawingLine(mouseStart, { x, y }, brushSettings.brushColor);
                 break;
             case "circle":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                finishDrawingCircle(mouseStart, { x, y });
+                finishDrawingCircle(mouseStart, { x, y }, brushSettings.brushColor);
                 break;
             case "rectangle":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
-                finishDrawingRectangle({ x, y }, mouseStart);
+                finishDrawingRectangle({ x, y }, mouseStart, brushSettings.brushColor);
                 break;
             default:
                 break;
@@ -308,6 +303,7 @@ export const CanvasProvider = ({ children }) => {
                 setMouseStart({ x, y }); // Only for pencil. For the other shapes we need to remember the starting point
                 ctx.beginPath();
                 ctx.moveTo(mouseStart.x, mouseStart.y);
+                ctx.strokeStyle = brushSettings.brushColor;
                 ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.closePath();
@@ -315,6 +311,7 @@ export const CanvasProvider = ({ children }) => {
             case "line":
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
                 previewCtx.beginPath();
+                previewCtx.strokeStyle = brushSettings.brushColor;
                 previewCtx.moveTo(mouseStart.x, mouseStart.y);
                 previewCtx.lineTo(x, y);
                 previewCtx.stroke();
@@ -324,6 +321,7 @@ export const CanvasProvider = ({ children }) => {
                 const r = distance(mouseStart, { x, y });
                 previewCtx.clearRect(0, 0, canvas.height * scale, canvas.width * scale);
                 previewCtx.beginPath();
+                previewCtx.strokeStyle = brushSettings.brushColor;
                 previewCtx.arc(mouseStart.x, mouseStart.y, r, 0, 2*Math.PI);
                 previewCtx.stroke();
                 previewCtx.closePath();
@@ -337,6 +335,7 @@ export const CanvasProvider = ({ children }) => {
         
                 previewCtx.beginPath();
                 previewCtx.moveTo(x, y);
+                previewCtx.strokeStyle = brushSettings.brushColor;
                 previewCtx.rect(mouseStart.x, mouseStart.y, w, h);
                 previewCtx.stroke();
                 previewCtx.closePath();
